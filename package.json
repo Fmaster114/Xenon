@@ -1,10 +1,10 @@
 {
-  "name": "XenonBot",
+  "name": "Xenon",
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "discord.js": "^14.0.0",
-    "express": "^4.18.0"
+    "discord.js": "^14.13.0",
+    "express": "^4.18.2"
   },
   "scripts": {
     "start": "node index.js"
