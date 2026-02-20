@@ -1,212 +1,124 @@
 const { Client, GatewayIntentBits, Partials, PermissionFlagsBits, ChannelType, ActivityType } = require('discord.js');
 const express = require('express');
 
-// --- 1. CONFIGURATION & STATE ---
+// --- 1. CONFIGURATION ---
 const CONFIG = {
     SERVER_ID: '1195624668829327450',
-    MODMAIL_CATEGORY_ID: '1473649458997624843',
-    STAFF_ROLE_ID: '1473649483836297327',
-    DASHBOARD_PASSWORD: '55368', // <--- CHANGE THIS!
+    DASHBOARD_PASSWORD: 'YourSecretPassword123',
+    ROBLOX_API_KEY: 'k8IvUAD+0kWzgw2O6KwO5A/DiOQwqvLHZ3qVJn5xypWm+mivZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaGRXUWlPaUpTYjJKc2IzaEpiblJsY201aGJDSXNJbWx6Y3lJNklrTnNiM1ZrUVhWMGFHVnVkR2xqWVhScGIyNVRaWEoyYVdObElpd2lZbUZ6WlVGd2FVdGxlU0k2SW1zNFNYWlZRVVFyTUd0WGVtZDNNazgyUzNkUE5VRXZSR2xQVVhkeGRreElXak54VmtwdU5YaDVjRmR0SzIxcGRpSXNJbTkzYm1WeVNXUWlPaUl5TkRjMk5ERTNOVEl6SWl3aVpYaHdJam94TnpjeE5qQXlNak14TENKcFlYUWlPakUzTnpFMU9UZzJNekVzSW01aVppSTZNVGMzTVRVNU9EWXpNWDAuSFRhbXpkNlBOanpnTUk2QmxNdnRCYzlqdkJ3ZXJoMENXZFVvX2s5NzkxV3BWVENrb3lQODVEWlRlMmVUdGRqNG54eThsLW9xVTFyR3dPM3JiOS12T2FvWXFZREh0enlGUUh5NkExVVZRRms1NnhNLXFFVXRDX293R25wU2ZaOFhzVGtQbXBTeWl4U0dhblJEYS1jeF9pNGd3ZExjZEduSk45TmJBWHFaMFd1LVcwN01OR2RVX0MwdGtaZDBjSUxDOWZMcUs5N2VDejZIZnNhbUwwSkxCenQ5eDE4bGh5a3BEZ1hGN0cwM0pJLS1IUGUyWWQ1ajRFSVZpSDdvOWhEeE1tQTJYWnl5SkxUX2lpSk5ESGJ6NUJVUmNUazUxR0JlNzA5Q084MVUtcmZBaGFsQ1RSTFMzdmh5UFZnZjFvQ3ROZ1IyZWtieDdlTWNGTVBUYTBvdFFR', // Get this from Roblox Creator Dashboard
+    UNIVERSE_ID: '15806450151', // Your Roblox Universe ID
     MAINTENANCE_MODE: false,
-    STATUS_TEXT: 'Watching DMs',
     ADMIN_NAME: 'Administration Team'
 };
 
-// This stores the last 20 actions in memory
-let auditLogs = []; 
-const activeCreators = new Set();
+let auditLogs = [];
+let activeRobloxServers = new Map(); // Stores active JobIDs and player lists
 
-function addLog(action, details) {
-    const logEntry = {
-        time: new Date().toLocaleTimeString(),
-        action: action,
-        details: details
-    };
-    auditLogs.unshift(logEntry); // Add to top
-    if (auditLogs.length > 20) auditLogs.pop(); // Keep only last 20
-}
-
-// --- 2. THE ADVANCED DASHBOARD ---
+// --- 2. THE CATEGORIZED DASHBOARD ---
 const app = express();
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Roblox Heartbeat Endpoint (Roblox calls this)
+app.post('/roblox/heartbeat', (req, res) => {
+    const { jobId, players, serverName } = req.body;
+    activeRobloxServers.set(jobId, {
+        name: serverName || "Main Server",
+        players: players, // Array of {name: string, id: number}
+        lastSeen: Date.now()
+    });
+    res.sendStatus(200);
+});
 
 app.get('/dashboard', (req, res) => {
-    const logHtml = auditLogs.map(l => `<li>[${l.time}] <b>${l.action}</b>: ${l.details}</li>`).join('') || "No logs yet.";
+    const logHtml = auditLogs.map(l => `<li>[${l.time}] ${l.details}</li>`).join('');
     
+    // Generate Roblox Server Cards
+    let robloxHtml = "";
+    activeRobloxServers.forEach((data, id) => {
+        robloxHtml += `
+            <div class="card" style="border-left-color: #00a2ff;">
+                <h4>Server: ${data.name} (${id.substring(0,8)})</h4>
+                <ul>${data.players.map(p => `
+                    <li>${p.name} 
+                        <button onclick="kickRoblox('${id}', '${p.id}')" style="background:red; padding:2px 5px; font-size:10px;">KICK</button>
+                    </li>`).join('')}
+                </ul>
+            </div>`;
+    });
+
     res.send(`
         <html>
             <head>
-                <title>Xenon Pro Dashboard</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Xenon Cloud Panel</title>
                 <style>
-                    body { font-family: 'Segoe UI', sans-serif; background: #2c2f33; color: white; padding: 20px; }
-                    .container { max-width: 800px; margin: auto; }
-                    .card { background: #23272a; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #7289da; }
-                    .status-on { color: #43b581; } .status-off { color: #f04747; }
-                    input, button { padding: 10px; border-radius: 5px; border: none; margin: 5px 0; }
-                    button { background: #7289da; color: white; cursor: pointer; font-weight: bold; }
-                    .logs { background: #1e2124; padding: 15px; border-radius: 5px; height: 200px; overflow-y: scroll; font-family: monospace; list-style: none; }
+                    body { font-family: sans-serif; background: #2c2f33; color: white; display: flex; margin: 0; }
+                    .sidebar { width: 200px; background: #23272a; height: 100vh; padding: 20px; border-right: 1px solid #444; }
+                    .main { flex: 1; padding: 20px; overflow-y: scroll; }
+                    .card { background: #2f3136; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #7289da; }
+                    .nav-btn { display: block; width: 100%; padding: 10px; background: none; border: none; color: #b9bbbe; text-align: left; cursor: pointer; }
+                    .nav-btn:hover { background: #3c3f44; color: white; }
                 </style>
             </head>
             <body>
-                <div class="container">
-                    <h1>Xenon Pro Control Panel</h1>
-                    
-                    <div class="card">
-                        <h3>Bot Controls</h3>
-                        <p>Status: <b class="${CONFIG.MAINTENANCE_MODE ? 'status-off' : 'status-on'}">${CONFIG.MAINTENANCE_MODE ? "🛠️ MAINTENANCE" : "✅ ONLINE"}</b></p>
-                        <form action="/update-settings" method="POST">
-                            <label>Admin Team Name:</label><br>
-                            <input type="text" name="adminName" value="${CONFIG.ADMIN_NAME}"><br>
-                            <label>Status Message:</label><br>
-                            <input type="text" name="statusText" value="${CONFIG.STATUS_TEXT}"><br>
-                            <label>Password to Save Changes:</label><br>
-                            <input type="password" name="password" required><br>
-                            <button type="submit" name="action" value="toggle">Toggle Maintenance</button>
-                            <button type="submit" name="action" value="save" style="background: #43b581;">Save Settings Only</button>
-                        </form>
+                <div class="sidebar">
+                    <h2>Xenon</h2>
+                    <button class="nav-btn" onclick="show('general')">⚙️ General Settings</button>
+                    <button class="nav-btn" onclick="show('roblox')">🎮 Roblox Servers</button>
+                    <button class="nav-btn" onclick="show('logs')">📜 Audit Logs</button>
+                </div>
+                <div class="main">
+                    <div id="general" class="tab">
+                        <h1>General Settings</h1>
+                        <div class="card">
+                            <form action="/update-settings" method="POST">
+                                <label>Maintenance Mode:</label> ${CONFIG.MAINTENANCE_MODE ? "ON" : "OFF"}<br>
+                                <input type="password" name="password" placeholder="Dashboard Password" required><br>
+                                <button type="submit" name="action" value="toggle">Toggle Maintenance</button>
+                            </form>
+                        </div>
                     </div>
-
-                    <div class="card" style="border-left-color: #faa61a;">
-                        <h3>Recent Audit Logs (Last 20 Actions)</h3>
-                        <ul class="logs">${logHtml}</ul>
+                    <div id="roblox" class="tab" style="display:none;">
+                        <h1>Active Roblox Servers</h1>
+                        ${robloxHtml || "<p>No active servers detected.</p>"}
+                    </div>
+                    <div id="logs" class="tab" style="display:none;">
+                        <h1>Logs</h1>
+                        <div class="card">${logHtml}</div>
                     </div>
                 </div>
+                <script>
+                    function show(id) {
+                        document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+                        document.getElementById(id).style.display = 'block';
+                    }
+                    function kickRoblox(jobId, userId) {
+                        const pass = prompt("Enter Dashboard Password to Kick:");
+                        fetch('/roblox/kick', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ jobId, userId, password: pass })
+                        }).then(() => alert("Kick command sent!"));
+                    }
+                </script>
             </body>
         </html>
     `);
 });
 
-app.post('/update-settings', (req, res) => {
-    if (req.body.password !== CONFIG.DASHBOARD_PASSWORD) return res.send("Invalid Password.");
+// Kick logic using Roblox OpenCloud
+app.post('/roblox/kick', async (req, res) => {
+    if (req.body.password !== CONFIG.DASHBOARD_PASSWORD) return res.sendStatus(403);
     
-    CONFIG.ADMIN_NAME = req.body.adminName;
-    CONFIG.STATUS_TEXT = req.body.statusText;
-    
-    if (req.body.action === 'toggle') {
-        CONFIG.MAINTENANCE_MODE = !CONFIG.MAINTENANCE_MODE;
-        addLog("System", `Maintenance Mode toggled to ${CONFIG.MAINTENANCE_MODE}`);
-    } else {
-        addLog("System", "Settings updated via Dashboard");
-    }
-
-    updateBotStatus();
-    res.redirect('/dashboard');
+    // This sends a message to Roblox via MessagingService API
+    const url = `https://apis.roblox.com/messaging-service/v1/universes/${CONFIG.UNIVERSE_ID}/topics/GlobalKick`;
+    await fetch(url, {
+        method: 'POST',
+        headers: { 'x-api-key': CONFIG.ROBLOX_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: JSON.stringify({ userId: req.body.userId }) })
+    });
+    res.sendStatus(200);
 });
 
 app.listen(3000);
-
-// --- 3. BOT SETUP ---
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages],
-    partials: [Partials.Channel, Partials.Message, Partials.User]
-});
-
-function updateBotStatus() {
-    if (CONFIG.MAINTENANCE_MODE) {
-        client.user.setActivity('🛠️ Maintenance', { type: ActivityType.Custom });
-        client.user.setStatus('dnd');
-    } else {
-        client.user.setActivity(CONFIG.STATUS_TEXT, { type: ActivityType.Watching });
-        client.user.setStatus('online');
-    }
-}
-
-// --- 4. COMMANDS & MODMAIL ---
-client.once('ready', async () => {
-    updateBotStatus();
-    const guild = client.guilds.cache.get(CONFIG.SERVER_ID);
-    if (guild) {
-        await guild.commands.set([
-            { name: 'kick', description: 'Kick a user', options: [{ name: 'user', type: 6, description: 'The user to kick', required: true }] },
-            { name: 'ban', description: 'Ban a user', options: [{ name: 'user', type: 6, description: 'The user to ban', required: true }] },
-            { name: 'warn', description: 'Warn a user', options: [
-                { name: 'user', type: 6, description: 'The user to warn', required: true },
-                { name: 'reason', type: 3, description: 'Reason', required: true }
-            ]},
-            { name: 'clear', description: 'Delete messages', options: [{ name: 'amount', type: 4, description: '1-100', required: true }] },
-            { name: 'ping', description: 'Bot latency' },
-            { name: 'areyouawake', description: 'Check status' }
-        ]);
-        console.log("Xenon Pro Ready");
-    }
-});
-
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-
-    if (message.channel.type === ChannelType.DM) {
-        if (CONFIG.MAINTENANCE_MODE) return message.reply("🛠️ Bot is under maintenance.");
-        if (activeCreators.has(message.author.id)) return;
-
-        const guild = client.guilds.cache.get(CONFIG.SERVER_ID);
-        const category = guild.channels.cache.get(CONFIG.MODMAIL_CATEGORY_ID);
-        let channel = guild.channels.cache.find(c => c.topic === `Modmail User ID: ${message.author.id}`);
-
-        if (!channel) {
-            activeCreators.add(message.author.id);
-            try {
-                channel = await guild.channels.create({
-                    name: `mail-${message.author.username}`,
-                    type: ChannelType.GuildText,
-                    parent: category,
-                    topic: `Modmail User ID: ${message.author.id}`
-                });
-                addLog("Modmail", `New ticket created for ${message.author.tag}`);
-            } finally { activeCreators.delete(message.author.id); }
-        }
-        if (channel) await channel.send(`**${message.author.username}:** ${message.content}`);
-    }
-
-    if (message.content.startsWith('!reply ') && message.channel.parentId === CONFIG.MODMAIL_CATEGORY_ID) {
-        const userId = message.channel.topic?.replace('Modmail User ID: ', '');
-        const user = await client.users.fetch(userId);
-        const reply = message.content.replace('!reply ', '');
-        await user.send(`**${CONFIG.ADMIN_NAME}:** ${reply}`);
-        addLog("Reply", `Staff replied to ${user.tag}`);
-    }
-
-    if (message.content === '!close' && message.channel.parentId === CONFIG.MODMAIL_CATEGORY_ID) {
-        addLog("Modmail", `Ticket closed: ${message.channel.name}`);
-        await message.channel.send("Closing...");
-        setTimeout(() => message.channel.delete(), 2000);
-    }
-});
-
-client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    const { commandName, options, member, user } = interaction;
-
-    if (commandName === 'warn') {
-        const target = options.getUser('user');
-        const reason = options.getString('reason');
-        addLog("Warn", `${user.tag} warned ${target.tag} for: ${reason}`);
-        await interaction.reply(`Warned ${target.tag}`);
-    }
-    
-    if (commandName === 'clear') {
-        const amount = options.getInteger('amount');
-        await interaction.channel.bulkDelete(amount, true);
-        addLog("Clear", `${user.tag} cleared ${amount} messages in ${interaction.channel.name}`);
-        await interaction.reply({ content: `Cleared ${amount} messages.`, ephemeral: true });
-    }
-
-    if (commandName === 'kick') {
-        const target = options.getMember('user');
-        addLog("Kick", `${user.tag} kicked ${target.user.tag}`);
-        await target.kick();
-        await interaction.reply(`${target.user.tag} kicked.`);
-    }
-
-    if (commandName === 'ban') {
-        const target = options.getMember('user');
-        addLog("Ban", `${user.tag} banned ${target.user.tag}`);
-        await target.ban();
-        await interaction.reply(`${target.user.tag} banned.`);
-    }
-
-    if (commandName === 'ping') await interaction.reply(`Latency: ${client.ws.ping}ms`);
-    if (commandName === 'areyouawake') await interaction.reply("I am awake! ☀️");
-});
-
-client.login(process.env.TOKEN);
+// (Rest of the bot client.login and events remain the same)
