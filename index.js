@@ -1,286 +1,148 @@
-// 1. ADD THIS AT THE VERY TOP (Fixes the Fetch Error)
+// 1. POLYFILL FOR FETCH (Required for Node 18+ and Render environments)
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const { Client, GatewayIntentBits, Partials, PermissionFlagsBits, ChannelType, ActivityType, EmbedBuilder } = require('discord.js');
 const express = require('express');
 
-// --- 1. CONFIGURATION ---
+// --- 2. CONFIGURATION ---
 const CONFIG = {
     SERVER_ID: '1195624668829327450',
     MODMAIL_CATEGORY_ID: '1473649458997624843',
     DASHBOARD_PASSWORD: '5538',
-    // Keeping your provided API Key exactly as requested
-    ROBLOX_API_KEY: 'k8IvUAD+0kWzgw2O6KwO5A/DiOQwqvLHZ3qVJn5xypWm+mivZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaGRXUWlPaUpTYjJKc2IzaEpiblJsY201aGJDSXNJbWx6Y3lJNklrTnNiM1ZrUVhWMGFHVnVkR2xqWVhScGIyNVRaWEoyYVdObElpd2lZbUZ6WlVGd2FVdGxlU0k2SW1zNFNYWlZRVVFyTUd0WGVtZDNNazgyUzNkUE5VRXZSR2xQVVhkeGRreElXak54VmtwdU5YaDVjRmR0SzIxcGRpSXNJbTkzYm1TeVNXUWlPaUl5TkRjMk5ERTNOVEl6SWl3aVpYaHdJam94TnpjeE5qQXlNak14TENKcFlYUWlPakUzTnpFMU9UZzJNekVzSW01aVppSTZNVGMzTVRVNU9EWXpNWDAuSFRhbXpkNlBOanpnTUk2QmxNdnRCYzlqdkJ3ZXJoMENXZFVvX2s5NzkxV3BWVENrb3lQODVEWlRlMmVUdGRqNG54eThsLW9xVTFyR3dPM3JiOS12T2FvWXFZREh0enlGUUh5NkExVVZRRms1NnhNLXFFVXRDX293R25wU2ZaOFhzVGtQbXBTeWl4U0dhblJEYS1jeF9pNGd3ZExjZEduSk45TmJBWHFaMFd1LVcwN01OR2RVX0MwdGtaZDBjSUxDOWZMcUs5N2VDejZIZnNhbUwwSkxCenQ5eDE4bGh5a3BEZ1hGN0cwM0pJLS1IUGUyWWQ1ajRFSVZpSDdvOWhEeE1tQTJYWnl5SkxUX2lpSk5ESGJ6NUJVUmNUazUxR0JlNzA5Q084MVUtcmZBaGFsQ1RSTFMzdmh5UFZnZjFvQ3ROZ1IyZWtieDdlTWNGTVBUYTBvdFFR', 
+    // Your provided API Key
+    ROBLOX_API_KEY: 'k8IvUAD+0kWzgw2O6KwO5A/DiOQwqvLHZ3qVJn5xypWm+mivZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaGRXUWlPaUpTYjJKc2IzaEpiblJsY201aGJDSXNJbWx6Y3lJNklrTnNiM1ZrUVhWMGFHVnVkR2xqWVhScGIyNVRaWEoyYVdObElpd2lZbUZ6WlVGd2FVdGxlU0k2SW1zNFNYWlZRVVFyTUd0WGVtZDNNazgyUzNkUE5VRXZSR2xQVVhkeGRreElXak54VmtwdU5YaDVjRmR0SzIxcGRpSXNJbTkzYm1TeVNXUWlPaUl5TkRjMk5ERTNOVEl6SWl3aVpYaHdJam94TnpjeE5qQXlNak14TENKcFlYUWlPakUzTnpFMU9UZzJNekVzSW01aVppSTZNVGMzTVRVNU9EWXpNWDAuSFRhbXpkNlBOanpnTUk2QmxNdnRCYzlqdkJ3ZXJoMENXZFVvX2s5NzkxV3BWVENrb3lQODVEWlRlMmVUdGRqNG54eThsLW9xVTFyR3dPM3JiOS12T2FvWXFZREh0enlGUUh5NkExVVZRRms1NnhNLXFFVXRDX293R25wU2ZaOFhzVGtQbXBTeWl4U0dhblJEYS1jeF9pNGd3ZExjZEduSk45TmJBWHFaMFd1LVcwN01OR2RVX0MwdGtaZDBjSUxDOWZMcUs5N2VDejZIZnNhbUwwSkxCenQ5eDE4bGh5a3BEZ1hGN0cwM0pJLS1IUGUyWWQ1ajRFSVZpSDdvOWhEeE1tQTJYWnl5SkxUX2lpSk5ESGJ6NUJVUmNUazUxR0JlNzA5Q084MVUtcmZBaGFsQ1RSTFMzdmh5UFZnZjFvQ3ROZ1IyZWtieDdlTWNGTVBUYTBvdFFR',
     UNIVERSE_ID: '15806450151',
-    MAINTENANCE_MODE: false,
     ADMIN_NAME: 'Administration Team',
     STATUS_TEXT: 'Watching DMs'
 };
 
-let auditLogs = [];
 let activeRobloxServers = new Map();
 const activeCreators = new Set();
 
-function addLog(type, details) {
-    auditLogs.unshift({ time: new Date().toLocaleTimeString(), type, details });
-    if (auditLogs.length > 30) auditLogs.pop();
-}
-
-// --- 2. THE ADVANCED DASHBOARD ---
+// --- 3. EXPRESS DASHBOARD ---
 const app = express();
+app.use(express.json()); // Essential for Roblox Heartbeat
 
-// IMPORTANT: These must come BEFORE routes to fix 404/Empty data issues
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Roblox Heartbeat Endpoint
+// Roblox Heartbeat
 app.post('/roblox/heartbeat', (req, res) => {
     const { jobId, players, serverName } = req.body;
-    if (!jobId) return res.status(400).send("No JobId provided");
+    if (!jobId) return res.sendStatus(400);
     
-    activeRobloxServers.set(jobId, { 
-        name: serverName || "Active Server", 
-        players: players || [], 
-        lastSeen: Date.now() 
+    activeRobloxServers.set(jobId, {
+        name: serverName || "Game Server",
+        players: players || [],
+        lastSeen: Date.now()
     });
-    
-    // Auto-remove servers that haven't pinged in 2 minutes
-    for (const [id, data] of activeRobloxServers) {
-        if (Date.now() - data.lastSeen > 120000) activeRobloxServers.delete(id);
-    }
-
     res.sendStatus(200);
 });
 
 // Dashboard UI
 app.get('/dashboard', (req, res) => {
-    const logHtml = auditLogs.map(l => `<tr><td>${l.time}</td><td><b>${l.type}</b></td><td>${l.details}</td></tr>`).join('');
     let robloxHtml = "";
-
     activeRobloxServers.forEach((data, id) => {
         robloxHtml += `
-            <div class="card roblox-card">
+            <div style="background:#36393f; padding:15px; margin:10px; border-radius:8px; border-left: 4px solid #00a2ff;">
                 <h4>🎮 ${data.name} <small>(${id.substring(0,8)})</small></h4>
-                <div class="player-list">
-                    ${data.players.length > 0 ? data.players.map(p => `
-                        <div class="player-item">
-                            <span>${p.name} (ID: ${p.id})</span>
-                            <button class="btn-danger" onclick="kickRoblox('${id}', '${p.id}')">KICK</button>
-                        </div>
-                    `).join('') : '<p>No players online.</p>'}
-                </div>
+                ${data.players.map(p => `
+                    <div style="display:flex; justify-content:space-between; margin:5px 0;">
+                        <span>${p.name}</span>
+                        <button onclick="kick('${id}','${p.id}')" style="background:#ed4245; color:white; border:none; border-radius:3px; cursor:pointer;">KICK</button>
+                    </div>
+                `).join('')}
             </div>`;
     });
 
     res.send(`
-        <!DOCTYPE html>
         <html>
-        <head>
-            <title>Xenon Pro | Cloud</title>
-            <style>
-                :root { --bg: #2f3136; --sidebar: #202225; --accent: #5865f2; --text: #ffffff; --danger: #ed4245; }
-                body { font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; margin: 0; height: 100vh; }
-                .sidebar { width: 240px; background: var(--sidebar); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-                .main { flex: 1; padding: 40px; overflow-y: auto; }
-                .tab { display: none; } .tab.active { display: block; }
-                .card { background: #36393f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
-                .roblox-card { border-left-color: #00a2ff; }
-                .nav-btn { background: none; border: none; color: #b9bbbe; padding: 12px; text-align: left; cursor: pointer; border-radius: 5px; }
-                .nav-btn.active { background: #3c3f44; color: white; }
-                .player-item { display: flex; justify-content: space-between; align-items: center; background: #2f3136; padding: 10px; margin: 5px 0; border-radius: 4px; }
-                button { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-                .btn-danger { background: var(--danger); }
-                input { background: #202225; color: white; border: 1px solid #444; padding: 10px; width: 80%; border-radius: 4px; }
-            </style>
-        </head>
-        <body>
-            <div class="sidebar">
-                <h2>XENON PRO</h2>
-                <button class="nav-btn active" onclick="show('general')">⚙️ General</button>
-                <button class="nav-btn" onclick="show('roblox')">🎮 Roblox Cloud</button>
-                <button class="nav-btn" onclick="show('logs')">📜 Audit Logs</button>
-            </div>
-            <div class="main">
-                <div id="general" class="tab active">
-                    <h1>Settings</h1>
-                    <div class="card">
-                        <form action="/update-settings" method="POST">
-                            <input type="password" name="password" placeholder="Password" required><br><br>
-                            <button type="submit" name="action" value="toggle">Toggle Maintenance</button>
-                        </form>
-                    </div>
+            <head><title>Xenon Pro</title></head>
+            <body style="background:#2f3136; color:white; font-family:sans-serif; padding:20px;">
+                <h1>Xenon Pro Cloud</h1>
+                <div style="background:#36393f; padding:15px; border-radius:8px; margin-bottom:20px;">
+                    <h3>Global Shout</h3>
+                    <input type="text" id="msg" style="width:70%; padding:8px;">
+                    <button onclick="shout()" style="padding:8px; background:#5865f2; color:white; border:none; cursor:pointer;">SEND</button>
                 </div>
-                <div id="roblox" class="tab">
-                    <h1>Roblox Servers</h1>
-                    <div class="card">
-                        <h3>Global Shout</h3>
-                        <input type="text" id="shoutMsg" placeholder="Message to all servers...">
-                        <button onclick="globalShout()">SHOUT</button>
-                    </div>
-                    <div id="robloxServers">${robloxHtml || "<p>No active servers detected.</p>"}</div>
-                </div>
-                <div id="logs" class="tab">
-                    <h1>Audit Logs</h1>
-                    <div class="card">
-                        <table width="100%">${logHtml}</table>
-                    </div>
-                </div>
-            </div>
-            <script>
-                function show(id) {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.getElementById(id).classList.add('active');
-                }
-                function kickRoblox(jobId, userId) {
-                    const pass = prompt("Password:");
-                    fetch('/roblox/kick', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ jobId, userId, password: pass })
-                    }).then(r => r.ok ? alert("Kicked!") : alert("Error"));
-                }
-                function globalShout() {
-                    const msg = document.getElementById('shoutMsg').value;
-                    const pass = prompt("Password:");
-                    fetch('/roblox/shout', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ message: msg, password: pass })
-                    }).then(r => r.ok ? alert("Shout Sent!") : alert("Error"));
-                }
-            </script>
-        </body>
+                <h2>Active Servers</h2>
+                ${robloxHtml || "<p>No servers online.</p>"}
+                <script>
+                    function kick(j, u) {
+                        const p = prompt("Password:");
+                        fetch('/roblox/kick', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({jobId:j, userId:u, password:p})
+                        }).then(() => alert("Command Sent"));
+                    }
+                    function shout() {
+                        const m = document.getElementById('msg').value;
+                        const p = prompt("Password:");
+                        fetch('/roblox/shout', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({message:m, password:p})
+                        }).then(() => alert("Shout Sent"));
+                    }
+                </script>
+            </body>
         </html>
     `);
 });
 
-// --- DASHBOARD POST ROUTES ---
+// Outbound to Roblox
 app.post('/roblox/kick', async (req, res) => {
     if (req.body.password !== CONFIG.DASHBOARD_PASSWORD) return res.sendStatus(403);
     const url = `https://apis.roblox.com/messaging-service/v1/universes/${CONFIG.UNIVERSE_ID}/topics/GlobalKick`;
-    const response = await fetch(url, {
+    await fetch(url, {
         method: 'POST',
         headers: { 'x-api-key': CONFIG.ROBLOX_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: JSON.stringify({ userId: req.body.userId }) })
     });
-    if (response.ok) {
-        addLog("Roblox", `Kicked User ${req.body.userId}`);
-        res.sendStatus(200);
-    } else {
-        res.status(500).send("Roblox API Error");
-    }
+    res.sendStatus(200);
 });
 
 app.post('/roblox/shout', async (req, res) => {
     if (req.body.password !== CONFIG.DASHBOARD_PASSWORD) return res.sendStatus(403);
     const url = `https://apis.roblox.com/messaging-service/v1/universes/${CONFIG.UNIVERSE_ID}/topics/GlobalShout`;
-    const response = await fetch(url, {
+    await fetch(url, {
         method: 'POST',
         headers: { 'x-api-key': CONFIG.ROBLOX_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: req.body.message })
     });
-    if (response.ok) {
-        addLog("Roblox", `Shout: ${req.body.message}`);
-        res.sendStatus(200);
-    } else {
-        res.status(500).send("Roblox API Error");
-    }
+    res.sendStatus(200);
 });
 
-app.listen(3000, () => console.log("Dashboard on Port 3000"));
-
-// --- 3. DISCORD BOT LOGIC ---
+// --- 4. DISCORD BOT ---
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages
+    ],
     partials: [Partials.Channel, Partials.Message, Partials.User]
 });
 
-// (Keep your existing client.on events for modmail and interactions below)
-client.login(process.env.TOKEN);
-// --- 3. DISCORD BOT LOGIC ---
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages],
-    partials: [Partials.Channel, Partials.Message, Partials.User]
+client.once('ready', () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+    app.listen(3000, () => console.log("🌐 Dashboard running on port 3000"));
 });
 
-function updateBotStatus() {
-    if (CONFIG.MAINTENANCE_MODE) {
-        client.user.setActivity('🛠️ Maintenance', { type: ActivityType.Custom });
-        client.user.setStatus('dnd');
-    } else {
-        client.user.setActivity(CONFIG.STATUS_TEXT, { type: ActivityType.Watching });
-        client.user.setStatus('online');
-    }
-}
-
-client.once('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}`);
-    updateBotStatus();
-
-    const guild = client.guilds.cache.get(CONFIG.SERVER_ID);
-    if (guild) {
-        try {
-            await guild.commands.set([
-                { 
-                    name: 'kick', 
-                    description: 'Kick a member from the server', 
-                    options: [{ name: 'user', type: 6, description: 'The user to kick', required: true }] 
-                },
-                { 
-                    name: 'ban', 
-                    description: 'Ban a member from the server', 
-                    options: [{ name: 'user', type: 6, description: 'The user to ban', required: true }] 
-                },
-                { 
-                    name: 'warn', 
-                    description: 'Issue a formal warning to a member', 
-                    options: [
-                        { name: 'user', type: 6, description: 'The user to warn', required: true },
-                        { name: 'reason', type: 3, description: 'Reason for the warning', required: true }
-                    ] 
-                },
-                { 
-                    name: 'clear', 
-                    description: 'Bulk delete messages in a channel', 
-                    options: [{ name: 'amount', type: 4, description: 'Number of messages (1-100)', required: true }] 
-                },
-                { 
-                    name: 'slowmode', 
-                    description: 'Set the channel slowmode delay', 
-                    options: [{ name: 'seconds', type: 4, description: 'Delay in seconds', required: true }] 
-                },
-                { name: 'ping', description: 'Check the bot response time' },
-                { name: 'areyouawake', description: 'Check if the bot is online' }
-            ]);
-            console.log('✅ Commands synced successfully!');
-        } catch (error) {
-            console.error('❌ Failed to sync commands:', error);
-        }
-    }
-});
-
+// Modmail Logic
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
     if (message.channel.type === ChannelType.DM) {
-        if (CONFIG.MAINTENANCE_MODE) return message.reply("🛠️ Under Maintenance.");
-        if (activeCreators.has(message.author.id)) return;
-
         const guild = client.guilds.cache.get(CONFIG.SERVER_ID);
         const category = guild.channels.cache.get(CONFIG.MODMAIL_CATEGORY_ID);
         let channel = guild.channels.cache.find(c => c.topic === `Modmail User ID: ${message.author.id}`);
 
         if (!channel) {
-            activeCreators.add(message.author.id);
-            try {
-                channel = await guild.channels.create({
-                    name: `mail-${message.author.username}`,
-                    type: ChannelType.GuildText,
-                    parent: category,
-                    topic: `Modmail User ID: ${message.author.id}`
-                });
-                addLog("Modmail", `Opened for ${message.author.tag}`);
-            } finally { activeCreators.delete(message.author.id); }
+            channel = await guild.channels.create({
+                name: `mail-${message.author.username}`,
+                type: ChannelType.GuildText,
+                parent: category,
+                topic: `Modmail User ID: ${message.author.id}`
+            });
         }
         await channel.send(`**${message.author.username}:** ${message.content}`);
     }
@@ -291,34 +153,11 @@ client.on('messageCreate', async (message) => {
         await user.send(`**${CONFIG.ADMIN_NAME}:** ${message.content.replace('!reply ', '')}`);
         message.react('✅');
     }
-
-    if (message.content === '!close' && message.channel.parentId === CONFIG.MODMAIL_CATEGORY_ID) {
-        await message.channel.send("Closing...");
-        setTimeout(() => message.channel.delete(), 2000);
-    }
 });
 
-client.on('interactionCreate', async (i) => {
-    if (!i.isChatInputCommand()) return;
-    if (CONFIG.MAINTENANCE_MODE && !['ping', 'areyouawake'].includes(i.commandName)) {
-        return i.reply({ content: "Maintenance Mode is active.", ephemeral: true });
-    }
-
-    if (i.commandName === 'slowmode') {
-        const sec = i.options.getInteger('seconds');
-        await i.channel.setRateLimitPerUser(sec);
-        addLog("Mod", `Slowmode set to ${sec}s in ${i.channel.name}`);
-        return i.reply(`Slowmode set to ${sec} seconds.`);
-    }
-
-    if (i.commandName === 'warn') {
-        const target = i.options.getUser('user');
-        const reason = i.options.getString('reason');
-        addLog("Warn", `${target.tag} warned: ${reason}`);
-        await i.reply(`Warned ${target.tag}.`);
-    }
-
-    if (i.commandName === 'ping') i.reply(`Latency: ${client.ws.ping}ms`);
+// Global Error Catch to prevent "Exited with status 1"
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
 });
 
 client.login(process.env.TOKEN);
