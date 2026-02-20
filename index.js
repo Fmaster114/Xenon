@@ -213,18 +213,48 @@ function updateBotStatus() {
 }
 
 client.once('ready', async () => {
+    console.log(`Logged in as ${client.user.tag}`);
     updateBotStatus();
+
     const guild = client.guilds.cache.get(CONFIG.SERVER_ID);
     if (guild) {
-        await guild.commands.set([
-            { name: 'kick', description: 'Kick a member', options: [{ name: 'user', type: 6, required: true }] },
-            { name: 'ban', description: 'Ban a member', options: [{ name: 'user', type: 6, required: true }] },
-            { name: 'warn', description: 'Warn a member', options: [{ name: 'user', type: 6, required: true }, { name: 'reason', type: 3, required: true }] },
-            { name: 'clear', description: 'Clear messages', options: [{ name: 'amount', type: 4, required: true }] },
-            { name: 'slowmode', description: 'Set slowmode', options: [{ name: 'seconds', type: 4, required: true }] },
-            { name: 'ping', description: 'Check latency' },
-            { name: 'areyouawake', description: 'Check status' }
-        ]);
+        try {
+            await guild.commands.set([
+                { 
+                    name: 'kick', 
+                    description: 'Kick a member from the server', 
+                    options: [{ name: 'user', type: 6, description: 'The user to kick', required: true }] 
+                },
+                { 
+                    name: 'ban', 
+                    description: 'Ban a member from the server', 
+                    options: [{ name: 'user', type: 6, description: 'The user to ban', required: true }] 
+                },
+                { 
+                    name: 'warn', 
+                    description: 'Issue a formal warning to a member', 
+                    options: [
+                        { name: 'user', type: 6, description: 'The user to warn', required: true },
+                        { name: 'reason', type: 3, description: 'Reason for the warning', required: true }
+                    ] 
+                },
+                { 
+                    name: 'clear', 
+                    description: 'Bulk delete messages in a channel', 
+                    options: [{ name: 'amount', type: 4, description: 'Number of messages (1-100)', required: true }] 
+                },
+                { 
+                    name: 'slowmode', 
+                    description: 'Set the channel slowmode delay', 
+                    options: [{ name: 'seconds', type: 4, description: 'Delay in seconds', required: true }] 
+                },
+                { name: 'ping', description: 'Check the bot response time' },
+                { name: 'areyouawake', description: 'Check if the bot is online' }
+            ]);
+            console.log('✅ Commands synced successfully!');
+        } catch (error) {
+            console.error('❌ Failed to sync commands:', error);
+        }
     }
 });
 
